@@ -1,0 +1,3 @@
+add_executable(cache_benchmarks main.cpp)
+
+target_link_libraries(cache_benchmarks PRIVATE v1_cache)
