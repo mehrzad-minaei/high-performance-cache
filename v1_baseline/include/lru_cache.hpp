@@ -47,9 +47,8 @@ public:
 
     LRUCache& operator=(LRUCache&& other) noexcept {
         if (this != &other) {
-            std::lock_guard<std::mutex> lock1(mutex_);
-            std::lock_guard<std::mutex> lock2(other.mutex_);
-            clear();
+            std::scoped_lock lock(mutex_, other.mutex_);    
+            clear_unlocked();
             capacity_ = other.capacity_;
             move_list_and_map(std::move(other));
         }
@@ -113,17 +112,7 @@ public:
 
     void clear() {
         std::lock_guard<std::mutex> lock(mutex_);
-        
-        NodeBase* curr = head_.next;
-        while (curr != &tail_) {
-            NodeBase* next = curr->next;
-            delete static_cast<Node*>(curr);
-            curr = next;
-        }
-
-        head_.next = &tail_;
-        tail_.prev = &head_;
-        map_.clear();
+        clear_unlocked();
     }
 
     [[nodiscard]] size_t size() const {
@@ -136,6 +125,20 @@ public:
     }
 
 private:
+    // Helper: Clears nodes assuming mutex_ is ALREADY locked by the caller
+    void clear_unlocked() {
+        NodeBase* curr = head_.next;
+        while (curr != &tail_) {
+            NodeBase* next = curr->next;
+            delete static_cast<Node*>(curr);
+            curr = next;
+        }
+
+        head_.next = &tail_;
+        tail_.prev = &head_;
+        map_.clear();
+    }
+
     // Helper: Remove node from its current position in the list
     void detach(NodeBase* node) {
         node->prev->next = node->next;
