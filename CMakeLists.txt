@@ -26,4 +26,5 @@ endif()
 
 # Subdirectories
 add_subdirectory(v1_baseline)
+add_subdirectory(v2_sharded)
 add_subdirectory(benchmarks)
